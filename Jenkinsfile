@@ -4,8 +4,19 @@ pipeline {
     tools {
         maven 'Maven-3.8.4'
     }
-
+    parameters {
+        choice(
+         name: 'ENVIRONMENT',
+         choices: ['DEV','QA','PROD'],
+         description: 'Select Environment'
+    )
+}
     stages {
+	stage('Show Environment') {
+   	 steps {
+        	echo "Selected Environment: ${params.ENVIRONMENT}"
+    	    }
+	}
 
         stage('Checkout') {
             steps {
