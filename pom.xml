@@ -24,14 +24,14 @@
     <snapshotRepository>
         <id>company-snapshots</id>
         <url>
-        http://100.56.227.255:8081/repository/company-snapshots/
+        http://54.198.59.17:8081/repository/company-snapshots/
         </url>
     </snapshotRepository>
 
     <repository>
         <id>company-releases</id>
         <url>
-        http://100.56.227.255:8081/repository/company-releases/
+        http://54.198.59.17:8081/repository/company-releases/
         </url>
     </repository>
 
