@@ -127,7 +127,23 @@ stage('Environment Info') {
     }
 
 
+    stage('SonarQube Analysis') {
+   	 steps {
+        	script {
+           	 def scannerHome = tool 'SonarScanner'
 
+           	 withSonarQubeEnv('SonarQube') {
+               	 sh """
+               	 ${scannerHome}/bin/sonar-scanner \
+               	 -Dsonar.projectKey=demo-app \
+               	 -Dsonar.projectName=demo-app \
+               	 -Dsonar.sources=src \
+               	 -Dsonar.java.binaries=target/classes
+               	 """
+        	    }
+       	 }
+    	}
+	}
    stage('Deploy') {
 
     steps {
