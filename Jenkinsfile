@@ -1,232 +1,81 @@
 pipeline {
-
 agent any
 
-
-
-
-
 tools {
-
-    maven 'Maven-3.8.4'
-
+    maven 'Maven'
 }
 
 environment {
-
-    APP_NAME = "demo-app"
-
-    COMPANY = "Company"
-
-} 
-
-
-
-parameters {
-
-    choice(
-
-        name: 'ENVIRONMENT',
-
-        choices: ['DEV', 'QA', 'PROD'],
-
-        description: 'Select Environment'
-
-    )
-
+    IMAGE_NAME = "sairajender/demo-app"
+    IMAGE_TAG = "${BUILD_NUMBER}"
 }
-
-
 
 stages {
 
-
-
-    stage('Show Environment') {
-
+    stage('Build') {
         steps {
-
-            echo "Selected Environment: ${params.ENVIRONMENT}"
-
+            sh 'mvn clean package'
         }
-
     }
-
-stage('Environment Info') {
-
-    steps {
-
-        echo "Application: ${APP_NAME}"
-
-        echo "Organization: ${COMPANY}"
-
-    }
-
-} 
-
-
-
-    stage('Checkout') {
-
-        steps {
-
-            git branch: 'main',
-
-                url: 'https://github.com/sairajender/jenkins-nexus-demo.git'
-
-        }
-
-    }
-
-
-
-    stage('Compile') {
-
-        steps {
-
-            sh 'mvn compile'
-
-        }
-
-    }
-
-
-
-    stage('Test') {
-
-        steps {
-
-            sh 'mvn test'
-
-        }
-
-    }
-
-
-
-    stage('Package') {
-
-        steps {
-
-            sh 'mvn package'
-
-        }
-
-    }
-
 
     stage('SonarQube Analysis') {
-   	 steps {
-        	script {
-           	 def scannerHome = tool 'SonarScanner'
-
-           	 withSonarQubeEnv('SonarQube') {
-               	 sh """
-               	 ${scannerHome}/bin/sonar-scanner \
-               	 -Dsonar.projectKey=demo-app \
-               	 -Dsonar.projectName=demo-app \
-               	 -Dsonar.sources=src \
-               	 -Dsonar.java.binaries=target/classes
-               	 """
-        	    }
-       	 }
-    	}
-	}
- 
-	stage('Quality Gate') {
-    		steps {
-        		timeout(time: 5, unit: 'MINUTES') {
-            			waitForQualityGate abortPipeline: true
-        }
-    }
-}
-
-
-  	stage('Approval') {
-
-        	steps {
-
-           	 input 'Approve deployment?'
-
-        }
-
-    }
-
-  	stage('Deploy') {
-
-	    steps {
-
-        	script {
-
-
-
-            if (params.ENVIRONMENT == "DEV") {
-
-                echo "Deploying to Development Server"
-
-            }
-
-
-
-            else if (params.ENVIRONMENT == "QA") {
-
-                echo "Deploying to QA Server"
-
-            }
-
-
-
-            else {
-
-                echo "Deploying to Production Server"
-
-            }
-
-
-
-        }
-
-    }
-
-} 
-
-
-
-    stage('Deploy To Nexus') {
-
         steps {
-
-            sh 'mvn deploy'
-
+            withSonarQubeEnv('SonarQube') {
+                sh '''
+                mvn sonar:sonar \
+                -Dsonar.projectKey=demo-app \
+                -Dsonar.host.url=http://184.73.116.22:9000 \
+                -Dsonar.login=sqp_48f828fcf54460853c0935e23962abb9607e9de2
+                '''
+            }
         }
-
     }
 
+    stage('Quality Gate') {
+        steps {
+            timeout(time: 10, unit: 'MINUTES') {
+                waitForQualityGate abortPipeline: true
+            }
+        }
+    }
+
+    stage('Build Docker Image') {
+        steps {
+            sh '''
+            docker build -t $IMAGE_NAME:$IMAGE_TAG .
+            '''
+        }
+    }
+
+    stage('Push To Docker Hub') {
+        steps {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )
+            ]) {
+                sh '''
+                echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+
+                docker push $IMAGE_NAME:$IMAGE_TAG
+
+                docker logout
+                '''
+            }
+        }
+    }
 }
-
-
 
 post {
-
     success {
-
-        echo 'Deployment Successful'
-
+        echo 'Docker Image Successfully Pushed'
     }
-
-
 
     failure {
-
-        echo 'Deployment Failed'
-
+        echo 'Pipeline Failed'
     }
-
 }
 
- 
-
-
-
 }
-
