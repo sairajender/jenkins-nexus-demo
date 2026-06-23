@@ -115,18 +115,6 @@ stage('Environment Info') {
     }
 
 
-
-    stage('Approval') {
-
-        steps {
-
-            input 'Approve deployment?'
-
-        }
-
-    }
-
-
     stage('SonarQube Analysis') {
    	 steps {
         	script {
@@ -144,11 +132,31 @@ stage('Environment Info') {
        	 }
     	}
 	}
-   stage('Deploy') {
+ 
+	stage('Quality Gate') {
+    		steps {
+        		timeout(time: 5, unit: 'MINUTES') {
+            			waitForQualityGate abortPipeline: true
+        }
+    }
+}
 
-    steps {
 
-        script {
+  	stage('Approval') {
+
+        	steps {
+
+           	 input 'Approve deployment?'
+
+        }
+
+    }
+
+  	stage('Deploy') {
+
+	    steps {
+
+        	script {
 
 
 
