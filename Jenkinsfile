@@ -66,6 +66,20 @@ stages {
             }
         }
     }
+	stage('Deploy Container') {
+
+   	 steps {
+
+       	 sh '''
+      	  docker stop demo-container || true
+      	  docker rm demo-container || true
+
+        docker run -d \
+        --name demo-container \
+        sairajender/demo-app:${BUILD_NUMBER}
+        '''
+    }
+}
 }
 
 post {
