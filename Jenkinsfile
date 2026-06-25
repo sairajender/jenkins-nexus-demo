@@ -24,7 +24,7 @@ stages {
                 sh '''
                 mvn sonar:sonar \
                 -Dsonar.projectKey=demo-app \
-                -Dsonar.host.url=http://3.82.243.130:9000 \
+                -Dsonar.host.url=http://3.90.7.233:9000 \
                 -Dsonar.login=sqp_48f828fcf54460853c0935e23962abb9607e9de2
                 '''
             }
